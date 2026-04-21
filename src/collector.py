@@ -150,14 +150,33 @@ class Config:
 
 
 def load_config() -> Config:
+    def env_str(name: str, default: str) -> str:
+        value = os.environ.get(name)
+        if value is None:
+            return default
+        value = value.strip()
+        return value if value else default
+
+    def env_int(name: str, default: int, minimum: int) -> int:
+        raw = os.environ.get(name)
+        if raw is None:
+            return max(minimum, default)
+        raw = raw.strip()
+        if not raw:
+            return max(minimum, default)
+        try:
+            return max(minimum, int(raw))
+        except ValueError:
+            return max(minimum, default)
+
     return Config(
-        gallery_id=os.environ.get("DC_GALLERY_ID", "").strip(),
-        gallery_type=os.environ.get("DC_GALLERY_TYPE", "minor").strip().lower(),
-        max_pages=max(1, int(os.environ.get("DC_MAX_LIST_PAGES", "60"))),
-        always_refresh_pages=max(1, int(os.environ.get("DC_ALWAYS_REFRESH_PAGES", "3"))),
-        comment_delay_minutes=max(1, int(os.environ.get("DC_COMMENT_DELAY_MINUTES", "20"))),
-        request_timeout_seconds=max(5, int(os.environ.get("DC_TIMEOUT_SECONDS", "20"))),
-        user_agent=os.environ.get(
+        gallery_id=env_str("DC_GALLERY_ID", ""),
+        gallery_type=env_str("DC_GALLERY_TYPE", "minor").lower(),
+        max_pages=env_int("DC_MAX_LIST_PAGES", default=60, minimum=1),
+        always_refresh_pages=env_int("DC_ALWAYS_REFRESH_PAGES", default=3, minimum=1),
+        comment_delay_minutes=env_int("DC_COMMENT_DELAY_MINUTES", default=20, minimum=1),
+        request_timeout_seconds=env_int("DC_TIMEOUT_SECONDS", default=20, minimum=5),
+        user_agent=env_str(
             "DC_USER_AGENT",
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
             "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
