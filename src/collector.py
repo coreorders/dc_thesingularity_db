@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -121,6 +122,9 @@ class Config:
     user_agent: str
     max_post_details_per_run: int
     max_comment_fetch_per_run: int
+    fetch_retries: int
+    fetch_retry_backoff_seconds: int
+    max_list_page_failures: int
 
     @property
     def list_base_url(self) -> str:
@@ -180,6 +184,9 @@ def load_config() -> Config:
         request_timeout_seconds=env_int("DC_TIMEOUT_SECONDS", default=20, minimum=5),
         max_post_details_per_run=env_int("DC_MAX_POST_DETAILS_PER_RUN", default=200, minimum=10),
         max_comment_fetch_per_run=env_int("DC_MAX_COMMENT_FETCH_PER_RUN", default=200, minimum=1),
+        fetch_retries=env_int("DC_FETCH_RETRIES", default=3, minimum=1),
+        fetch_retry_backoff_seconds=env_int("DC_FETCH_RETRY_BACKOFF_SECONDS", default=2, minimum=1),
+        max_list_page_failures=env_int("DC_MAX_LIST_PAGE_FAILURES", default=5, minimum=1),
         user_agent=env_str(
             "DC_USER_AGENT",
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -361,10 +368,26 @@ def parse_comments_from_detail(html: str) -> List[Dict[str, Any]]:
 
 
 def fetch(session: requests.Session, url: str, config: Config) -> str:
-    r = session.get(url, headers=config.headers, timeout=config.request_timeout_seconds)
-    r.raise_for_status()
-    r.encoding = r.apparent_encoding or "utf-8"
-    return r.text
+    last_exc: Optional[Exception] = None
+    for attempt in range(1, config.fetch_retries + 1):
+        try:
+            r = session.get(url, headers=config.headers, timeout=config.request_timeout_seconds)
+            r.raise_for_status()
+            r.encoding = r.apparent_encoding or "utf-8"
+            return r.text
+        except requests.RequestException as exc:
+            last_exc = exc
+            if attempt >= config.fetch_retries:
+                break
+            sleep_seconds = config.fetch_retry_backoff_seconds * attempt
+            print(
+                f"[fetch] retry {attempt}/{config.fetch_retries - 1} "
+                f"after {sleep_seconds}s url={url} err={type(exc).__name__}"
+            )
+            time.sleep(sleep_seconds)
+    if last_exc:
+        raise last_exc
+    raise RuntimeError("fetch failed without exception")
 
 
 def list_url(config: Config, page: int) -> str:
@@ -383,13 +406,28 @@ def pick_candidate_post_ids(
     candidate_ids: List[int] = []
     newest_seen = last_seen_post_id
     old_streak = 0
+    list_page_failures = 0
 
     for page in range(1, config.max_pages + 1):
         print(f"[list] scanning page={page}")
-        html = fetch(session, list_url(config, page), config)
+        try:
+            html = fetch(session, list_url(config, page), config)
+        except requests.RequestException as exc:
+            list_page_failures += 1
+            print(
+                f"[list] page={page} failed "
+                f"({list_page_failures}/{config.max_list_page_failures}) "
+                f"err={type(exc).__name__}: {exc}"
+            )
+            if list_page_failures >= config.max_list_page_failures:
+                print("[list] too many list page failures, stopping this run's list scan")
+                break
+            continue
+
         rows = parse_list_posts(html)
         if not rows:
             break
+        list_page_failures = 0
 
         page_ids = [r["post_id"] for r in rows if isinstance(r.get("post_id"), int)]
         if page_ids:
