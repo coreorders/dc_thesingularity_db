@@ -11,7 +11,7 @@ permissions:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     concurrency:
       group: dc-gallery-collector
       cancel-in-progress: false
@@ -40,6 +40,8 @@ jobs:
           DC_ALWAYS_REFRESH_PAGES: ${{ secrets.DC_ALWAYS_REFRESH_PAGES }}
           DC_COMMENT_DELAY_MINUTES: ${{ secrets.DC_COMMENT_DELAY_MINUTES }}
           DC_TIMEOUT_SECONDS: ${{ secrets.DC_TIMEOUT_SECONDS }}
+          DC_MAX_POST_DETAILS_PER_RUN: ${{ secrets.DC_MAX_POST_DETAILS_PER_RUN }}
+          DC_MAX_COMMENT_FETCH_PER_RUN: ${{ secrets.DC_MAX_COMMENT_FETCH_PER_RUN }}
           DC_USER_AGENT: ${{ secrets.DC_USER_AGENT }}
         run: |
           python src/collector.py

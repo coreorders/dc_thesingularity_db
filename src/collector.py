@@ -119,6 +119,8 @@ class Config:
     comment_delay_minutes: int
     request_timeout_seconds: int
     user_agent: str
+    max_post_details_per_run: int
+    max_comment_fetch_per_run: int
 
     @property
     def list_base_url(self) -> str:
@@ -176,6 +178,8 @@ def load_config() -> Config:
         always_refresh_pages=env_int("DC_ALWAYS_REFRESH_PAGES", default=3, minimum=1),
         comment_delay_minutes=env_int("DC_COMMENT_DELAY_MINUTES", default=20, minimum=1),
         request_timeout_seconds=env_int("DC_TIMEOUT_SECONDS", default=20, minimum=5),
+        max_post_details_per_run=env_int("DC_MAX_POST_DETAILS_PER_RUN", default=120, minimum=10),
+        max_comment_fetch_per_run=env_int("DC_MAX_COMMENT_FETCH_PER_RUN", default=80, minimum=1),
         user_agent=env_str(
             "DC_USER_AGENT",
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -381,6 +385,7 @@ def pick_candidate_post_ids(
     old_streak = 0
 
     for page in range(1, config.max_pages + 1):
+        print(f"[list] scanning page={page}")
         html = fetch(session, list_url(config, page), config)
         rows = parse_list_posts(html)
         if not rows:
@@ -480,11 +485,19 @@ def main() -> int:
     session.headers.update(config.headers)
 
     candidates, newest_seen = pick_candidate_post_ids(session, config, last_seen_post_id)
+    candidates = candidates[: config.max_post_details_per_run]
+    print(
+        f"[posts] targets={len(candidates)} "
+        f"(limit={config.max_post_details_per_run}) "
+        f"last_seen_post_id={last_seen_post_id} newest_seen={newest_seen}"
+    )
 
     post_fetch_ok = 0
     post_fetch_fail = 0
-    for pid in candidates:
+    for idx, pid in enumerate(candidates, start=1):
         try:
+            if idx % 10 == 0 or idx == 1 or idx == len(candidates):
+                print(f"[posts] fetching {idx}/{len(candidates)} pid={pid}")
             url = view_url(config, pid)
             html = fetch(session, url, config)
             detail = parse_post_detail(html)
@@ -496,10 +509,17 @@ def main() -> int:
             continue
 
     due_comment_ids = collect_due_comment_post_ids(posts_db, now)
+    due_comment_ids = due_comment_ids[: config.max_comment_fetch_per_run]
+    print(
+        f"[comments] targets={len(due_comment_ids)} "
+        f"(limit={config.max_comment_fetch_per_run})"
+    )
     comment_fetch_ok = 0
     comment_fetch_fail = 0
-    for pid in due_comment_ids:
+    for idx, pid in enumerate(due_comment_ids, start=1):
         try:
+            if idx % 10 == 0 or idx == 1 or idx == len(due_comment_ids):
+                print(f"[comments] fetching {idx}/{len(due_comment_ids)} pid={pid}")
             url = view_url(config, pid)
             html = fetch(session, url, config)
             comments = parse_comments_from_detail(html)

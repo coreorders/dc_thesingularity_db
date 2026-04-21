@@ -26,6 +26,8 @@ Repository Settings > Secrets and variables > Actions > New repository secret
 - `DC_ALWAYS_REFRESH_PAGES` (선택): 매번 재수집할 최신 페이지 수 (기본 `3`)
 - `DC_COMMENT_DELAY_MINUTES` (선택): 댓글 수집 지연 분 (기본 `20`)
 - `DC_TIMEOUT_SECONDS` (선택): 요청 타임아웃 (기본 `20`)
+- `DC_MAX_POST_DETAILS_PER_RUN` (선택): 1회 실행에서 본문 수집할 최대 글 수 (기본 `120`)
+- `DC_MAX_COMMENT_FETCH_PER_RUN` (선택): 1회 실행에서 댓글 수집할 최대 글 수 (기본 `80`)
 - `DC_USER_AGENT` (선택): 사용자 에이전트 문자열
 
 ## 실행
