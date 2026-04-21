@@ -1,0 +1,57 @@
+name: Collect DC Gallery DB
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: dc-gallery-collector
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run collector
+        env:
+          DC_GALLERY_ID: ${{ secrets.DC_GALLERY_ID }}
+          DC_GALLERY_TYPE: ${{ secrets.DC_GALLERY_TYPE }}
+          DC_MAX_LIST_PAGES: ${{ secrets.DC_MAX_LIST_PAGES }}
+          DC_ALWAYS_REFRESH_PAGES: ${{ secrets.DC_ALWAYS_REFRESH_PAGES }}
+          DC_COMMENT_DELAY_MINUTES: ${{ secrets.DC_COMMENT_DELAY_MINUTES }}
+          DC_TIMEOUT_SECONDS: ${{ secrets.DC_TIMEOUT_SECONDS }}
+          DC_USER_AGENT: ${{ secrets.DC_USER_AGENT }}
+        run: |
+          python src/collector.py
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet -- data; then
+            echo "No data changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          git commit -m "chore(data): update dc gallery db"
+          git push
