@@ -178,8 +178,8 @@ def load_config() -> Config:
         always_refresh_pages=env_int("DC_ALWAYS_REFRESH_PAGES", default=3, minimum=1),
         comment_delay_minutes=env_int("DC_COMMENT_DELAY_MINUTES", default=20, minimum=1),
         request_timeout_seconds=env_int("DC_TIMEOUT_SECONDS", default=20, minimum=5),
-        max_post_details_per_run=env_int("DC_MAX_POST_DETAILS_PER_RUN", default=120, minimum=10),
-        max_comment_fetch_per_run=env_int("DC_MAX_COMMENT_FETCH_PER_RUN", default=80, minimum=1),
+        max_post_details_per_run=env_int("DC_MAX_POST_DETAILS_PER_RUN", default=200, minimum=10),
+        max_comment_fetch_per_run=env_int("DC_MAX_COMMENT_FETCH_PER_RUN", default=200, minimum=1),
         user_agent=env_str(
             "DC_USER_AGENT",
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
