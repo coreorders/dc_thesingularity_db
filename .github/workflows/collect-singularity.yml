@@ -3,7 +3,7 @@ name: Collect DC Gallery DB
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "7,37 * * * *"
 
 permissions:
   contents: write
