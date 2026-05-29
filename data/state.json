@@ -1,14 +1,14 @@
 {
-  "last_run_at": "2026-05-30T01:27:33.355177+09:00",
-  "last_seen_post_id": 1220105,
+  "last_run_at": "2026-05-30T04:14:44.520992+09:00",
+  "last_seen_post_id": 1220272,
   "last_stats": {
-    "comment_fetch_fail": 4,
-    "comment_fetch_ok": 196,
+    "comment_fetch_fail": 21,
+    "comment_fetch_ok": 179,
     "comment_targets": 200,
-    "post_candidates": 200,
+    "post_candidates": 163,
     "post_fetch_fail": 0,
-    "post_fetch_ok": 200
+    "post_fetch_ok": 163
   },
-  "last_success_at": "2026-05-30T01:27:33.355177+09:00",
-  "run_count": 470
+  "last_success_at": "2026-05-30T04:14:44.520992+09:00",
+  "run_count": 471
 }
