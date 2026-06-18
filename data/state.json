@@ -1,6 +1,6 @@
 {
-  "last_run_at": "2026-06-18T21:39:53.398997+09:00",
-  "last_seen_post_id": 1263151,
+  "last_run_at": "2026-06-19T01:43:40.861978+09:00",
+  "last_seen_post_id": 1263438,
   "last_stats": {
     "comment_fetch_fail": 1,
     "comment_fetch_ok": 199,
@@ -9,6 +9,6 @@
     "post_fetch_fail": 0,
     "post_fetch_ok": 200
   },
-  "last_success_at": "2026-06-18T21:39:53.398997+09:00",
-  "run_count": 635
+  "last_success_at": "2026-06-19T01:43:40.861978+09:00",
+  "run_count": 636
 }
